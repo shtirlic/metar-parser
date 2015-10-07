@@ -26,46 +26,25 @@ module Metar
 
     # Collects METAR data from the NOAA site via FTP
     class Noaa < Base
-      @@connection = nil
 
       class << self
-
-        def connection
-          return @@connection if @@connection
-          connect
-          @@connection
-        end
-
-        def connect
-          @@connection = Net::FTP.new('tgftp.nws.noaa.gov')
-          @@connection.login
-          @@connection.chdir('data/observations/metar/stations')
-          @@connection.passive = true
-        end
-
-        def disconnect
-          return if @connection.nil
-          @connection.close
-          @cconnection = nil
-        end
-
         def fetch(cccc)
-          attempts = 0
-          while attempts < 2
-            begin
-              s = ''
-              connection.retrbinary( "RETR #{ cccc }.TXT", 1024 ) do |chunk|
-                s << chunk
-              end
-              return s
-            rescue Net::FTPPermError, Net::FTPTempError, EOFError => e
-              connect
-              attempts += 1
-            end
+          ftp_url = 'ftp://tgftp.nws.noaa.gov/data/observations/metar/stations'
+          uri = URI(ftp_url)
+          raw = StringIO.new('')
+          file = "#{cccc}.TXT"
+          Net::FTP.open(uri.host) do |ftp|
+            ftp.login
+            ftp.chdir(uri.path) unless uri.path.empty?
+            ftp.binary = true
+            ftp.passive = true
+            ftp.retrbinary('RETR ' + file, 4096) { |data| raw << data }
+            raw.rewind
           end
-          raise "Net::FTP.retrbinary failed #{attempts} times"
+          raw.string
+        rescue
+          return ''
         end
-
       end
 
       # Station is a string containing the CCCC code, or
@@ -104,10 +83,6 @@ module Metar
         @time            = Time.parse(raw_time)
         super
       end
-
     end
-
   end
-
 end
-
