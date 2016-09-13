@@ -8,7 +8,7 @@ require 'set'
 module Metar
 
   class Station
-    NOAA_STATION_LIST_URL = 'http://weather.noaa.gov/data/nsd_cccc.txt'
+    NOAA_STATION_LIST_URL = 'http://tgftp.nws.noaa.gov/data/nsd_cccc.txt'
 
     class << self
 
@@ -120,4 +120,3 @@ module Metar
   end
 
 end
-
